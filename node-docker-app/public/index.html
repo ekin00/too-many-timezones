@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UTC to Central Time Converter</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .header .emoji {
+      font-size: 32px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+      font-family: 'Courier New', monospace;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    input[type="datetime-local"] {
+      cursor: pointer;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-item {
+      margin-bottom: 15px;
+    }
+
+    .result-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .result-label {
+      color: #666;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .result-value {
+      color: #333;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .error {
+      background: #fee;
+      border-left-color: #f44;
+      color: #c33;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      color: #667eea;
+      font-size: 14px;
+    }
+
+    .loading.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        <span class="emoji">🌍</span>
+        Time Converter
+      </h1>
+      <p>Convert UTC time to Central Time (CT)</p>
+    </div>
+
+    <form id="converterForm">
+      <div class="form-group">
+        <label for="utcInput">Enter UTC Time:</label>
+        <input 
+          type="datetime-local" 
+          id="utcInput" 
+          required
+        >
+      </div>
+      
+      <button type="submit">🚀 Convert</button>
+    </form>
+
+    <div class="loading" id="loading">
+      Converting... ⏳
+    </div>
+
+    <div class="result" id="result">
+      <div class="result-item">
+        <span class="result-label">UTC Time</span>
+        <div class="result-value" id="utcResult"></div>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Central Time (CT)</span>
+        <div class="result-value" id="centralResult"></div>
+      </div>
+    </div>
+
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    // Set default to current UTC time
+    function setDefaultTime() {
+      const now = new Date();
+      const year = now.getUTCFullYear();
+      const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(now.getUTCDate()).padStart(2, '0');
+      const hours = String(now.getUTCHours()).padStart(2, '0');
+      const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+      
+      document.getElementById('utcInput').value = 
+        `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    setDefaultTime();
+
+    document.getElementById('converterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const utcInput = document.getElementById('utcInput').value;
+      const loading = document.getElementById('loading');
+      const result = document.getElementById('result');
+      const error = document.getElementById('error');
+
+      loading.classList.add('show');
+      result.classList.remove('show');
+      error.classList.remove('show');
+
+      try {
+        // Convert local datetime-local to ISO string
+        const date = new Date(utcInput);
+        const isoString = date.toISOString();
+
+        const response = await fetch(`/api/convert?utc=${encodeURIComponent(isoString)}`);
+        const data = await response.json();
+
+        loading.classList.remove('show');
+
+        if (data.error) {
+          error.textContent = `⚠️ ${data.error}`;
+          error.classList.add('show');
+        } else {
+          document.getElementById('utcResult').textContent = data.utc;
+          document.getElementById('centralResult').textContent = data.central;
+          result.classList.add('show');
+        }
+      } catch (err) {
+        loading.classList.remove('show');
+        error.textContent = `⚠️ Failed to connect to server: ${err.message}`;
+        error.classList.add('show');
+      }
+    });
+  </script>
+</body>
+</html>
